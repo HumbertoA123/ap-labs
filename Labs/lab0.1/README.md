@@ -1,6 +1,6 @@
 # Lab #1
 
-# Description
+## Description
 This program takes and input C file and returns a file with the same code but with no comments on it.
 
 ## Instructions
