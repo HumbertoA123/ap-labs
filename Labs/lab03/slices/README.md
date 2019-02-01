@@ -1,5 +1,5 @@
 
-# Lab03 - Slices
+# Lab #3 - Slices
 
 
 ## Description
