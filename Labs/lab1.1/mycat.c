@@ -31,6 +31,7 @@ int main(int argc, char **argv)
 		{
 			fprintf(fileO, "%c", c);
 		}
+		fclose(fileO);
 	}
 
 	fclose(file);
