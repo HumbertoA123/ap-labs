@@ -6,46 +6,53 @@
 
 FILE *file;
 int c;
-int size, lines;
-int z = 0;
+char* noiseWordList[153] = {"a", "about", "above", "after",        
+                 "again", "against", "all", "am", "an", "and", "any", "are",     
+                 "as", "at", "be", "because", "been", "before", "being", "below",
+                 "between", "both", "but", "by", "could", "did", "do", "does",   
+                 "doing", "down", "during", "each", "few", "for", "from",        
+                 "further", "had", "has", "have", "having", "he", "he'd",        
+                 "he'll", "he's", "her", "here", "here's", "hers", "herself",    
+                 "him", "himself", "his", "how", "how's", "i", "i'd", "i'll",    
+                 "i'm", "i've", "if", "in", "into", "is", "it", "it's", "its",   
+                 "itself", "let's", "me", "more", "most", "my", "myself", "nor", 
+                 "of", "on", "once", "only", "or", "other", "ought", "our",      
+                 "ours", "ourselves", "out", "over", "own", "same", "she",       
+                 "she'd", "she'll", "she's", "should","so", "some", "such",      
+                 "than", "that", "that's", "the", "their", "theirs", "them",     
+                 "themselves", "then", "there", "there's", "these", "they",      
+                 "they'd", "they'll", "they're", "they've","this", "those",      
+                 "through", "to", "too", "under", "until", "up", "very", "was",  
+                 "we", "we'd", "we'll", "we're", "we've", "were", "what",        
+                 "what's", "when", "when's", "where", "where's","which", "while", 
+                 "who", "who's", "whom", "why", "why's", "with", "would", "you", 
+                 "you'd", "you'll", "you're", "you've", "your", "yours",         
+                 "yourself", "yourselves"};   
+
+bool isInWordList(char* word);
+bool isUpperCase(int letter);
+int toLowercase(int letter);
+void processWord(char* word, int lineNumber);
+void displayResults();
 
 struct pair
 {
-	char* value;
-	int key;
-	int linesOccurrence[350];
-	int tableCounter;
+	char word[32];
+	int lineOccurence[1000];
 }q;
 
 struct pair pairArray[10000];
 
-void display(struct pair table[], int size)
+bool isInWordList(char* word)
 {
-	printf("Value\tKey\n");
-
-	for(int m = 0; m < size; m++)
+	for(int i = 0; i < sizeof(noiseWordList)/sizeof(noiseWordList[0]); i++)
 	{
-		printf("%s\t%d\n", pairArray[m].value, pairArray[m].key);
+		if(strcmp(word, noiseWordList[i]) == 0)
+		{
+			return true;
+		}
 	}
-}
-
-//unsigned long
-unsigned long hash(char *s)
-{
-    int k;
-    size_t h = 0;
-
-    for(k = 1; *s; s++ )
-    {
-    	h = (h * 10) + *s++ - '0';
-    }
-    return(h % 131);
-}
-
-int toLowercase(int letter)
-{
-	letter = letter + 32;
-	return letter;
+	return false;
 }
 
 bool isUpperCase(int letter)
@@ -58,135 +65,135 @@ bool isUpperCase(int letter)
 	
 }
 
-void manageLine(char* line, struct pair table[], int l)
+int toLowercase(int letter)
 {
-	char word[32];
-	int i = 0;
-	int j = 0;
-	
-	while(line[i] == ' ')
+	if(isUpperCase(letter))
 	{
-		i++;
+		letter = letter + 32;
 	}
-	
-	
-	for(i = i; i < strlen(line); i++)
+	return letter;
+}
+
+
+void processWord(char* word, int lineNumber)
+{
+	int i = 0;
+	for(int i = 0; sizeof(pairArray)/sizeof(pairArray[0]); i++)
 	{
-		if(line[1] == '\0')
+		if(pairArray[i].word[0] == '\0')
 		{
-			return;
-		}
-
-		if(isalpha(line[i]) != 0)
-		{
-			if(isUpperCase(line[i]))
+			for(int k = 0; k < sizeof(word)/sizeof(word[0]); k++)
 			{
-				line[i] = toLowercase(line[i]);
+				pairArray[i].word[k] = word[k];
 			}
-			word[j] = line[i];
-			j++;
+			pairArray[i].lineOccurence[0] = lineNumber;
+			break;
 		}
-
-		else if(strlen(word) > 0)
+		else if(strcmp(pairArray[i].word, word) == 0)
 		{
-			word[j] = '\0';
-
-			int val = hash(word);
-
-			while(table[val].value != NULL && strcmp(table[val].value, word) != 0)
+			int k = 1;
+			while(pairArray[i].lineOccurence[k] != 0)
 			{
-				val++;
+				k++;
 			}
-	
-			pairArray[z].value = word;
-			pairArray[z].key = val;
-			pairArray[z].linesOccurrence[pairArray[z].tableCounter] = l;
-			pairArray[z].tableCounter++;
-			z++;
-
-			//pairArray[z] = table;
-			//printf("%s : %d\n", table[val].value, table[val].tableCounter);
-
-			//printf("%s\n", table[val].value);
-
-			
-
-			memset(word, 0, sizeof word);
-			j = 0;
+			pairArray[i].lineOccurence[k] = lineNumber;
+			break;
 		}
+		
 	}
 }
 
 
-int getSize(FILE *fp)
+void displayResults()
 {
-	int i, counter = 0;
-	int flag = 0;
-	char word[32];
-	while((c = getc(fp)) != EOF)
+	int i = 0;
+	for(int i = 0; pairArray[i].word[0] != '\0'; i++)
 	{
-		if(isalpha(c) != 0)
-		{
-			flag = 1;
-		}
+		printf("%s : ", pairArray[i].word);
 
-		if(c == ' ')
+		for(int k = 0; pairArray[i].lineOccurence[k] != 0; k++)
 		{
-			flag = 0;
-			i = 0;
-			counter++;
-			memset(word, 0, sizeof word);
+			printf("%d ", pairArray[i].lineOccurence[k]);
 		}
-
-		if(flag == 1)
-		{
-			word[i] = c;
-		}
+		printf("\n");
 	}
-	return counter;
 }
 
 
 int main(int argc, char **argv)
-{
+{	
+	int flag = 1;
+	char word[32];
+	int pos = 0;
+	int lineCounter = 0;
+
 	file = fopen(argv[1], "r+");
 	if(file)
 	{
-		int size = getSize(file);
-		struct pair hashTable[size];
-
-		fseek(file, 0, SEEK_SET );
-		char log[256];
-		int i = 0;
-		int l = 1;
-		int flag = 1;
-
 		while((c = getc(file)) != EOF)
 		{
-			if(flag == 1)
+			if(c != ' ' && c != '\n' && c != '\0')
 			{
-				//printf("%d:	", l);
+				flag = 1;
+			}
+			else if(pos > 0)
+			{
+				word[pos] = '\0';
 				flag = 0;
-				//l++;
+				pos = 0;
+				if(!isInWordList(word))
+				{
+					//printf("%d : %s\n", lineCounter, word);
+					processWord(word, lineCounter);
+				}
+				memset(word, 0, sizeof word);
 			}
 
-			char tmp = c;
-			log[i] = tmp;
-			i++;
+			if(flag == 1 && isalpha(c))
+			{
+				word[pos] = toLowercase(c);
+				pos++;
+			}
 
 			if(c == '\n')
 			{
-				flag = 1;
-				i = 0;
-				l++;
-				manageLine(log, hashTable, l);
-				memset(log, 0, sizeof log);
+				lineCounter++;
 			}
 		}
-		display(hashTable, 5000);
 	}
+
+	displayResults();
 
 	fclose(file);
 	
 	return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
