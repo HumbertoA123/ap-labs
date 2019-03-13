@@ -89,12 +89,10 @@ int panicf(const char* tag, const char* message)
 		printf(" [%s]: %s\n", tag, message);
 		printf("\033[0m");
 	}
-	/*
 	else
 	{
 		syslog(LOG_USER | LOG_EMERG, message, message);
 	}
-	*/
 
 	return -2;
 }
