@@ -40,7 +40,7 @@ int infof(const char* tag, const char* message)
 	}
 	else
 	{
-		syslog(LOG_USER | LOG_EMERG, tag, message);
+		syslog(LOG_USER | LOG_EMERG, message, message);
 		printf("%d", loggerMode);
 	}
 
