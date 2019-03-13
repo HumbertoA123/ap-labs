@@ -49,7 +49,7 @@ int infof(const char* tag, const char* message)
 
 int warnf(const char* tag, const char* message)
 {
-	if()
+	if(loggerMode == 0)
 	{
 		printf("\033[1;33m");
 		printf(" [%s]: %s\n", tag, message);
@@ -66,7 +66,7 @@ int warnf(const char* tag, const char* message)
 
 int errorf(const char* tag, const char* message)
 {
-	if()
+	if(loggerMode == 0)
 	{
 		printf("\033[1;31m");
 		printf(" [%s]: %s\n", tag, message);
@@ -83,7 +83,7 @@ int errorf(const char* tag, const char* message)
 
 int panicf(const char* tag, const char* message)
 {
-	if()
+	if(loggerMode == 0)
 	{
 		printf("\033[1;35m");
 		printf(" [%s]: %s\n", tag, message);
