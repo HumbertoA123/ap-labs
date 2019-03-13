@@ -40,8 +40,7 @@ int infof(const char* tag, const char* message)
 	}
 	else
 	{
-		syslog(LOG_USER | LOG_EMERG, message, message);
-		printf("%d", loggerMode);
+		syslog(LOG_USER | LOG_INFO, message, message);
 	}
 
 	return 0;
@@ -50,9 +49,16 @@ int infof(const char* tag, const char* message)
 
 int warnf(const char* tag, const char* message)
 {
-	printf("\033[1;33m");
-	printf(" [%s]: %s\n", tag, message);
-	printf("\033[0m");
+	if()
+	{
+		printf("\033[1;33m");
+		printf(" [%s]: %s\n", tag, message);
+		printf("\033[0m");
+	}
+	else
+	{
+		syslog(LOG_USER | LOG_WARNING, message, message);
+	}
 
 	return 1;
 }
@@ -60,9 +66,16 @@ int warnf(const char* tag, const char* message)
 
 int errorf(const char* tag, const char* message)
 {
-	printf("\033[1;31m");
-	printf(" [%s]: %s\n", tag, message);
-	printf("\033[0m");
+	if()
+	{
+		printf("\033[1;31m");
+		printf(" [%s]: %s\n", tag, message);
+		printf("\033[0m");
+	}
+	else
+	{
+		syslog(LOG_USER | LOG_ERR, message, message);
+	}
 
 	return -1;
 }
@@ -70,10 +83,16 @@ int errorf(const char* tag, const char* message)
 
 int panicf(const char* tag, const char* message)
 {
-	printf("\033[1;35m");
-	printf(" [%s]: %s\n", tag, message);
-	printf("\033[0m");
+	if()
+	{
+		printf("\033[1;35m");
+		printf(" [%s]: %s\n", tag, message);
+		printf("\033[0m");
+	}
+	else
+	{
+		syslog(LOG_USER | LOG_EMERG, message, message);
+	}
 
 	return -2;
 }
-
