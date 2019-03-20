@@ -36,7 +36,7 @@ int main()
 	do
 	{
 		/*actually read return the list of change events happens. Here, read the change event one by one and process it accordingly.*/
-		while ( i < length ) {
+		while ( i < length + 10) {
 			struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];     if ( event->len ) {
 			    if ( event->mask & IN_CREATE )
 			    {
