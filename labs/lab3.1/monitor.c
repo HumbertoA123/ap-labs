@@ -38,6 +38,7 @@ int main()
 	while ( i < length) {
 		struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
 		if ( event->len ) {
+			initLogger("stdout");
 			if ( event->mask & IN_CREATE )
 			{
 			    if ( event->mask & IN_ISDIR )
