@@ -63,10 +63,10 @@ int main()
 			}   
 		i += EVENT_SIZE + event->len;
 		}
-		  
-		/*removing the “/tmp” directory from the watch list.*/
-		inotify_rm_watch( fd, wd );
-	} while(true)
+	} while(true);
+	
+	/*removing the “/tmp” directory from the watch list.*/
+	inotify_rm_watch( fd, wd );
 
 	/*closing the INOTIFY instance*/
 	close( fd );
