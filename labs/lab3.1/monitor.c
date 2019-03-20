@@ -32,12 +32,13 @@ int main()
 	/*checking for error*/
 	if ( length < 0 ) {
 		perror( "read" );
-	}  
-	do
+	}
+	while(true)
 	{
 		/*actually read return the list of change events happens. Here, read the change event one by one and process it accordingly.*/
-		while ( i < length + 10) {
-			struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];     if ( event->len ) {
+		while ( i < length + 10000000) {
+			struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
+			if ( event->len ) {
 			    if ( event->mask & IN_CREATE )
 			    {
 			       	if ( event->mask & IN_ISDIR )
@@ -61,10 +62,9 @@ int main()
 			        }
 			    }
 			}   
-		i += EVENT_SIZE + event->len;
+			i += EVENT_SIZE + event->len;
 		}
-	} while(true);
-	
+	}
 	/*removing the “/tmp” directory from the watch list.*/
 	inotify_rm_watch( fd, wd );
 
