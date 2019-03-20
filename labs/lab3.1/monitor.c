@@ -43,10 +43,12 @@ int main()
 			{
 			    if ( event->mask & IN_ISDIR )
 			    {
-			        infof("INFO", "New directory %s created.\n", event->name);
+			    	printf( "New directory %s created.\n", event->name );
+			        infof("INFO", "New directory created.\n");
 			    }
 			    else
 			    {
+			    	printf( "New file %s created.\n", event->name );
 			        infof("INFO", "New file created.\n");
 			    }
 			}
@@ -54,10 +56,12 @@ int main()
 			{
 			    if ( event->mask & IN_ISDIR )
 			    {
+			    	printf( "Directory %s deleted.\n", event->name );
 			        infof("INFO", "Directory deleted.\n");
 			    }
 			    else
 			    {
+			    	printf( "File %s deleted.\n", event->name );
 			       	infof("INFO", "File deleted.\n");
 			    }
 			}
