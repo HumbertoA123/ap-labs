@@ -10,4 +10,4 @@
 
  then type ´./monitor´ followd by the file to monito. For example:
 
- ´./monitor ´
+ `./monitor `
