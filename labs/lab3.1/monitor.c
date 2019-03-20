@@ -43,7 +43,7 @@ int main()
 			{
 			    if ( event->mask & IN_ISDIR )
 			    {
-			        infof("INFO", "New directory created.\n");
+			        infof("INFO", "New directory %s created.\n", event->name);
 			    }
 			    else
 			    {
