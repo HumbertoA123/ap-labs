@@ -43,22 +43,22 @@ int main()
 			{
 			    if ( event->mask & IN_ISDIR )
 			    {
-			        infof("INFO", "New directory %s created.\n");
+			        infof("INFO", "New directory created.\n");
 			    }
 			    else
 			    {
-			        infof("INFO", "New file %s created.\n");
+			        infof("INFO", "New file created.\n");
 			    }
 			}
 			else if ( event->mask & IN_DELETE )
 			{
 			    if ( event->mask & IN_ISDIR )
 			    {
-			        infof("INFO", "Directory %s deleted.\n");
+			        infof("INFO", "Directory deleted.\n");
 			    }
 			    else
 			    {
-			       	infof("INFO", "File %s deleted.\n");
+			       	infof("INFO", "File deleted.\n");
 			    }
 			}
 		}   
@@ -69,4 +69,5 @@ int main()
 
 	/*closing the INOTIFY instance*/
 	close( fd );
+	return 0;
 }
