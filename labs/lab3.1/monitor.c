@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 	int wd;
 	char buffer[EVENT_BUF_LEN];
 	/*Handle number of arguments*/
-	if(argc != 1) {
+	if(argc != 2) {
 		printf("Invalid number of arguments.\n");
 		return -1;
 	}
