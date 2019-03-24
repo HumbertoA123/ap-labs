@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include "logger.h"
 
 const char* base64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -10,6 +11,7 @@ char decodedMsg[1024];
 int base64encode(char* str);
 char bytesB6ToChar(char* str);
 int base64decode(char* str);
+char bytesB6ToChar(char* str);
 
 
 char bytesB6ToChar(char* str)
@@ -27,6 +29,24 @@ char bytesB6ToChar(char* str)
 		bitsMax /= 2;
 	}
 	return base64chars[charValue];
+}
+
+char bytesB8ToChar(char* str)
+{
+	int bitsMax = 128;
+	int charValue = 0;
+	for(int i = 0; i < strlen(str); i++)
+	{
+		char tmp = str[i];
+		char one = '1';
+		if(tmp == one)
+		{
+			charValue += bitsMax;
+		}
+		bitsMax /= 2;
+	}
+	char val = charValue;
+	return val;
 }
 
 
@@ -68,11 +88,11 @@ int base64encode(char* str)
 
 	if(counter == 1)
 	{
-		strcat(binaryMsg, "q");
+		strcat(binaryMsg, "0000q");
 	}
 	else if(counter  == 2)
 	{
-		strcat(binaryMsg, "q");
+		strcat(binaryMsg, "0000q");
 	}
 	//End alphanumeric to bits conversion.
 
@@ -93,7 +113,7 @@ int base64encode(char* str)
 		counter++;
 		if(counter == 6)
 		{
-			encodedMsg[tcounter] = bytesB6ToChar(byteB6);;
+			encodedMsg[tcounter] = bytesB6ToChar(byteB6);
 			tcounter++;
 			counter = 0;
 		}
@@ -109,16 +129,47 @@ int base64decode(char* str)
 {
 
 	//Start base 64 decoding.
-	memset(encodedMsg, 0, sizeof decodedMsg);
+	memset(decodedMsg, 0, sizeof decodedMsg);
 	memset(binaryMsg, 0, sizeof binaryMsg);
-
-	printf("%s\n", str);
 
 	for(int i = 0; i < strlen(str); i++)
 	{
-		for(int k = 0;  base64chars[k] == str[i]; k++)
+		int k = 0;
+		while(str[i] != base64chars[k])
 		{
-			printf("%d", k);
+			k++;
+		}
+		//printf("%d\n", k);
+
+		int bitsMax = 32;
+		while(bitsMax > 0)
+		{
+			if(k / bitsMax >= 1)
+			{
+				strcat(binaryMsg, "1");
+				k = k - bitsMax;
+			}
+			else
+			{
+				strcat(binaryMsg, "0");
+			}
+			bitsMax = bitsMax / 2;
+		}
+	}
+
+	char byteB8[8] = "";
+	int counter = 0;
+	int pos = 0;
+	for(int i = 0; i < strlen(binaryMsg); i++)
+	{
+		byteB8[counter] = binaryMsg[i];
+		counter++;
+
+		if(counter == 8)
+		{
+			decodedMsg[pos] = bytesB8ToChar(byteB8);
+			counter = 0;
+			pos++;
 		}
 	}
 
@@ -149,7 +200,8 @@ int main(int argc, char **argv)
 
 		if(fd)
 		{
-			while((c = getc(fd)) != EOF)
+			c = getc(fd);
+			while(c != EOF)
 			{
 				if(c == '\n')
 				{
@@ -164,7 +216,9 @@ int main(int argc, char **argv)
 					line[linePos] = c;
 					linePos++;
 				}
+				c = getc(fd);
 			}
+			infof("INFO", "Succesfully encoded file, output file: encoded.txt.\n");
 		}
 		
 	}
@@ -175,13 +229,14 @@ int main(int argc, char **argv)
 
 		if(fd)
 		{
-			while((c = getc(fd)) != EOF)
+			c = getc(fd);
+			while(c != EOF)
 			{
 				if(c == '\n')
 				{
 					base64decode(line);
-					char* encodedLine = encodedMsg;
-					fprintf(fdOut, "%s\n", encodedLine);
+					char* decodedLine = decodedMsg;
+					fprintf(fdOut, "%s\n", decodedLine);
 					memset(line, 0, sizeof line);
 					linePos = 0;
 				}
@@ -190,7 +245,9 @@ int main(int argc, char **argv)
 					line[linePos] = c;
 					linePos++;
 				}
+				c = getc(fd);
 			}
+			infof("INFO", "Succesfully decoded file, output file: decoded.txt.\n");
 		}
 	}
 	else
