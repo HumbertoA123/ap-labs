@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include <string.h>
+#include <signal.h> 
+#include <unistd.h>
+#include <time.h>
 #include "logger.h"
+
+#define SIGINT  2
+//#define SIGINFO  2
 
 const char* base64chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -8,11 +14,28 @@ char encodedMsg[1024];
 char binaryMsg[1024];
 char decodedMsg[1024];
 
+int progressCounter = 0;
+
 int base64encode(char* str);
 char bytesB6ToChar(char* str);
 int base64decode(char* str);
 char bytesB6ToChar(char* str);
 
+
+void nsleep(long us)
+{
+    struct timespec wait;
+    //printf("Will sleep for is %ld\n", diff); //This will take extra ~70 microseconds
+    
+    wait.tv_sec = us / (1000 * 1000);
+    wait.tv_nsec = (us % (1000 * 1000)) * 1000;
+    nanosleep(&wait, NULL);
+}
+
+void handle_sigint(int sig) 
+{ 
+    printf("Characters processed: %d\n", progressCounter);
+} 
 
 char bytesB6ToChar(char* str)
 {
@@ -84,6 +107,7 @@ int base64encode(char* str)
 			bitsMax = bitsMax / 2;
 		}
 		counter--;
+		progressCounter++;
 	}
 
 	if(counter == 1)
@@ -139,7 +163,6 @@ int base64decode(char* str)
 		{
 			k++;
 		}
-		//printf("%d\n", k);
 
 		int bitsMax = 32;
 		while(bitsMax > 0)
@@ -155,6 +178,7 @@ int base64decode(char* str)
 			}
 			bitsMax = bitsMax / 2;
 		}
+		progressCounter++;
 	}
 
 	char byteB8[8] = "";
@@ -210,6 +234,9 @@ int main(int argc, char **argv)
 					fprintf(fdOut, "%s\n", encodedLine);
 					memset(line, 0, sizeof line);
 					linePos = 0;
+
+					signal(SIGINT, handle_sigint); 
+				    nsleep(5000);
 				}
 				else
 				{
@@ -239,6 +266,9 @@ int main(int argc, char **argv)
 					fprintf(fdOut, "%s\n", decodedLine);
 					memset(line, 0, sizeof line);
 					linePos = 0;
+
+					signal(SIGINT, handle_sigint); 
+				    nsleep(5000);
 				}
 				else
 				{
