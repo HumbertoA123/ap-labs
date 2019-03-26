@@ -11,6 +11,8 @@ You will need the proper mechanisms for tracking the progress of any encoding/de
 
 ## Instructions
 
+`make`
+
 ## Encoding
 
 `./base64 --encode input.txt`
