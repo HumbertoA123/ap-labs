@@ -56,7 +56,7 @@ func deleteUser(userName string){
 func getUserList(ch chan string) {
 	for _, user := range usersList {
 		if user != "" {
-			ch <- user
+			ch <- serverName + " " + user
 		}
 	}
 }
@@ -122,11 +122,12 @@ func handleConn(conn net.Conn) {
 
 				fmt.Println(serverName, "New connected user [" + fields[0] + "]")
 
-				ch <- "You are " + who
-				messages <- who + " has arrived"
+				ch <- serverName + " Welcome to the Simple IRC Server" + who
+				ch <- serverName + " Your user [" + who + "] is succesfully logged"
+				messages <- serverName + " " + who + " has arrived"
 				entering <- ch
 			} else {
-				ch <- "Username is already in use, please enter another username:"
+				ch <- serverName + " Username is already in use, please enter another username:"
 			}
 		} else if fields[0] == "/users" {
 			getUserList(ch)
@@ -139,22 +140,22 @@ func handleConn(conn net.Conn) {
 				}
 				channelsList[fields[1]] <- buffer.String()
 			} else {
-				ch <- "There is no user with that name."
+				ch <- serverName + " There is no user with that name."
 			}
 		} else if fields[0] == "/time" {
 			t := time.Now()
-			ch <- t.Format("02/01/2006 15:04:05")
-		} else if fields[0] == "/user" {
-			ch <- "User: " + fields[1]
-			ch <- "IP address: " + clientsIPList[fields[1]]
+			ch <- serverName + " " + t.Format("02/01/2006 15:04:05")
+		} else if fields[0] == "/user" && len(fields) == 2 {
+			ch <- serverName + " User: " + fields[1]
+			ch <- serverName + " IP address: " + clientsIPList[fields[1]]
 		} else {
-			messages <- who + ": " + input.Text()
-		}	
+			messages <- who + " > " + input.Text()
+		}
 	}
 	// NOTE: ignoring potential errors from input.Err()
 
 	leaving <- ch
-	messages <- who + " has left"
+	messages <- serverName + " " + who + " has left"
 	fmt.Println(serverName, "[" + fields[0] + "] left")
 	deleteUser(who)
 	conn.Close()
