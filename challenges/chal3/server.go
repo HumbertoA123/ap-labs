@@ -13,11 +13,16 @@ import (
 	"log"
 	"net"
 	"flag"
+	"strings"
+	"bytes"
+	"time"
 )
+var serverName = "irc-server >"
 
 var usersList = make([]string, 0)
+var channelsList = make(map[string]chan <- string)
+var clientsIPList = make(map[string]string)
 
-//!+broadcaster
 type client chan <- string // an outgoing message channel
 
 var (
@@ -34,6 +39,18 @@ func deleteUser(userName string){
 			usersList = usersList[:len(usersList) - 1]
 		}
 	}
+
+	//Remove channel from list
+	_, channel := channelsList[userName]
+	if channel {
+		delete(channelsList, userName)
+	}
+
+	//Remove ip from list
+	_, ip := clientsIPList[userName]
+	if ip {
+		delete(clientsIPList, userName)
+	}
 }
 
 func getUserList(ch chan string) {
@@ -44,6 +61,16 @@ func getUserList(ch chan string) {
 	}
 }
 
+func isUserInList(username string) bool {
+	for _, user := range usersList {
+		if user == username {
+			return true
+		}
+	}
+	return false
+}
+
+//!+broadcaster
 func broadcaster() {
 	clients := make(map[client]bool) // all connected clients
 	for {
@@ -65,16 +92,6 @@ func broadcaster() {
 		}
 	}
 }
-
-func isUserInList(username string) bool {
-	for _, user := range usersList {
-		if user == username {
-			return true
-		}
-	}
-	return false
-}
-
 //!-broadcaster
 
 //!+handleConn
@@ -82,27 +99,54 @@ func handleConn(conn net.Conn) {
 	//clients := make(map[client]bool) // all connected clients
 	ch := make(chan string) // outgoing client messages
 	go clientWriter(conn, ch)
-	
-	who := ""//conn.RemoteAddr().String()
 
+	who := ""
 	usersList = append(usersList, "")
+	fields := make([]string, 0)
 
 	input := bufio.NewScanner(conn)
 	for input.Scan() {
+		if len(input.Text()) > 0 {
+			fields = strings.Fields(input.Text())
+		} else {
+			fields = strings.Fields("-")
+		}
+
 		if usersList[len(usersList) - 1] == "" {
-			if !isUserInList(input.Text()) {
-				usersList[len(usersList) - 1] = input.Text()
-				who = input.Text()
+			if !isUserInList(fields[0]) {
+				usersList[len(usersList) - 1] = fields[0]
+				who = fields[0]
+
+				channelsList[fields[0]] = ch
+				clientsIPList[fields[0]] = conn.RemoteAddr().String()
+
+				fmt.Println(serverName, "New connected user [" + fields[0] + "]")
+
 				ch <- "You are " + who
 				messages <- who + " has arrived"
 				entering <- ch
 			} else {
-				ch <- "Username is already in use, please enter another name:"
+				ch <- "Username is already in use, please enter another username:"
 			}
-
-
-		} else if input.Text() == "/users" {
+		} else if fields[0] == "/users" {
 			getUserList(ch)
+		} else if fields[0] == "/msg" && len(fields) > 2{
+			if isUserInList(fields[1]) {
+				var buffer bytes.Buffer
+				buffer.WriteString(who + ": ")
+				for i := 2; i <= len(fields) - 1; i++ {
+					buffer.WriteString(fields[i] + " ")
+				}
+				channelsList[fields[1]] <- buffer.String()
+			} else {
+				ch <- "There is no user with that name."
+			}
+		} else if fields[0] == "/time" {
+			t := time.Now()
+			ch <- t.Format("02/01/2006 15:04:05")
+		} else if fields[0] == "/user" {
+			ch <- "User: " + fields[1]
+			ch <- "IP address: " + clientsIPList[fields[1]]
 		} else {
 			messages <- who + ": " + input.Text()
 		}	
@@ -111,6 +155,7 @@ func handleConn(conn net.Conn) {
 
 	leaving <- ch
 	messages <- who + " has left"
+	fmt.Println(serverName, "[" + fields[0] + "] left")
 	deleteUser(who)
 	conn.Close()
 }
@@ -129,20 +174,18 @@ func main() {
 	//Handle flags
 	hostPtr := flag.String("host", "localhost:8000", "a string")
 	portPtr := flag.String("port", "9000", "a string")
-
 	flag.Parse()
-
-	fmt.Println("host:", *hostPtr)
-	fmt.Println("port:", *portPtr)
 	//End handling flags
 
-
-	listener, err := net.Listen("tcp", "localhost:8000")
+	host := *hostPtr + ":" + *portPtr
+	listener, err := net.Listen("tcp", host)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	go broadcaster()
+	fmt.Println(serverName, "Simple IRC Server started at", host)
+	fmt.Println(serverName, "Ready for receiving new clients")
 	for {
 		conn, err := listener.Accept()
 		if err != nil {

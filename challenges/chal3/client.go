@@ -12,7 +12,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"fmt"
 	"flag"
 	"github.com/go-vgo/robotgo"
 )
@@ -29,24 +28,22 @@ func main() {
 	flag.Parse()
 	//End handling flags
 
-	conn, err := net.Dial("tcp", "localhost:8000")
+	conn, err := net.Dial("tcp", *serverPtr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	
+
 	done := make(chan struct{})
+
+	robotgo.TypeStr(*userPtr)
+	robotgo.KeyTap("enter")
+	print("\033[H\033[2J")
 
 	go func() {
 		io.Copy(os.Stdout, conn) // NOTE: ignoring errors
 		log.Println("done")
 		done <- struct{}{} // signal the main goroutine
 	}()
-
-	robotgo.TypeStr(*userPtr)
-	robotgo.KeyTap("enter")
-	fmt.Println("server:", *serverPtr)
-	
-	print("\033[H\033[2J")
 
 	mustCopy(conn, os.Stdin)
 	conn.Close()
