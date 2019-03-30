@@ -7,7 +7,7 @@ Implement a simple [IRC](https://en.wikipedia.org/wiki/Internet_Relay_Chat) serv
 
 Instructions
 ------------
-To run the proram first run the following command: `go get "github.com/go-vgo/robotgo"`
+To run the program first run the following command: `go get "github.com/go-vgo/robotgo"`
 
 For the server run `go run server.go -host localhost -port 9000`         with your desire flags.
 
