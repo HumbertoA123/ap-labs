@@ -1,6 +1,13 @@
 MyTop
 =====
+
+General
+-------
 Implement a new version of the `top` tool. The only source of information about processes  will be the `/proc` filesystem. This should be a real-time application that automatically updates the dashboard with new and terminated processes. Below more details about the requirements.
+
+Instructions
+------------
+To run the program run `make` then type `sudo ./mytop` (It will ask for your username password).
 
 Requirements
 ------------

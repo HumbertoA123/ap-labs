@@ -1,6 +1,18 @@
 Simple IRC Server
 =================
+
+General
+-------
 Implement a simple [IRC](https://en.wikipedia.org/wiki/Internet_Relay_Chat) server with a client-server architecture.
+
+Instructions
+------------
+To run the program first run the following command: `go get "github.com/go-vgo/robotgo"`
+
+For the server run `go run server.go -host localhost -port 9000`         with your desire flags.
+
+For the client run `go run client.go -user user1 -server localhost:9000` with your desire flags.
+
 
 It will be based on the Go Programming Language book's chapter 8th examples. [Chat Server](https://github.com/adonovan/gopl.io/tree/master/ch8/chat) and [netcat client](https://github.com/adonovan/gopl.io/tree/master/ch8/netcat3). Below you can see the specific requirements for this.
 
