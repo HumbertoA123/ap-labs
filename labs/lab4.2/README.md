@@ -11,7 +11,8 @@ Instructions to run the program
 
 To run the program first type `make`
 
-Now type `./multipler -n n` where n is the number of buffer you will give to the program.
+Now type `./multipler -n n` where n is the number of buffers you will give to the program.
+For example `./multipler -n 12`
 
 General instructions
 --------------------
