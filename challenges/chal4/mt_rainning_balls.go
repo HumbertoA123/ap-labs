@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+	"sync"
 	)
 
 /*Constants*/
@@ -17,12 +18,14 @@ const (
 
 /*Global Variables*/
 var voxelMap [][][]int
+var wg sync.WaitGroup
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
 	voxelMap = generateVoxelMap()
 	displayVoxelMap()
-	runRain()
+	go rain()
+	time.Sleep(time.Second * 5)
 }
 
 func generateVoxelMap() [][][]int {
@@ -56,37 +59,47 @@ func displayVoxelMap() {
 	}
 }
 
-
-func runRain() {
-	for i := 0; i < 10; i++ {
-		rain()
+func displayNumbers() {
+	for i := 0; i < len(voxelMap); i++ {
+		for j := 0; j < len(voxelMap); j++ {
+			fmt.Print(voxelMap[i][j][1], "  ")
+		}
+		fmt.Println("")
 	}
 }
 
-func rain() {
-	x := rand.Intn(n)
-	y := rand.Intn(m)
-	voxelMap[x][y][1] = 1
 
-	for true {
-		displayVoxelMap()
-		time.Sleep(time.Millisecond * 2000)
-		if y < (m - 1) && voxelMap[x][y + 1][0] < voxelMap[x][y][0] && voxelMap[x][y + 1][1] == 0 {
-			voxelMap[x][y][1] = 0
-			y += 1
-		} else if x < (n - 1) && voxelMap[x + 1][y][0] < voxelMap[x][y][0] && voxelMap[x + 1][y][1] == 0 {
-			voxelMap[x][y][1] = 0
-			x += 1
-		} else if y > 0 && voxelMap[x][y - 1][0] < voxelMap[x][y][0] && voxelMap[x][y - 1][1] == 0 {
-			voxelMap[x][y][1] = 0
-			y -= 1
-		} else if x > 0 && voxelMap[x - 1][y][0] < voxelMap[x][y][0] && voxelMap[x - 1][y][1] == 0 {
-			voxelMap[x][y][1] = 0
-			x -= 1
-		} else {
-			break
+func rain() {
+	for i := 0; i < 350; i++ {
+		x := rand.Intn(n)
+		y := rand.Intn(m)
+		for voxelMap[x][y][1] == 1 {
+			x = rand.Intn(n)
+			y = rand.Intn(m)
 		}
 		voxelMap[x][y][1] = 1
+
+		for true {
+			displayVoxelMap()
+			//displayNumbers()
+			//time.Sleep(time.Millisecond * 500)
+			if y < (m - 1) && voxelMap[x][y + 1][0] < voxelMap[x][y][0] && voxelMap[x][y + 1][1] == 0 {
+				voxelMap[x][y][1] = 0
+				y += 1
+			} else if x < (n - 1) && voxelMap[x + 1][y][0] < voxelMap[x][y][0] && voxelMap[x + 1][y][1] == 0 {
+				voxelMap[x][y][1] = 0
+				x += 1
+			} else if y > 0 && voxelMap[x][y - 1][0] < voxelMap[x][y][0] && voxelMap[x][y - 1][1] == 0 {
+				voxelMap[x][y][1] = 0
+				y -= 1
+			} else if x > 0 && voxelMap[x - 1][y][0] < voxelMap[x][y][0] && voxelMap[x - 1][y][1] == 0 {
+				voxelMap[x][y][1] = 0
+				x -= 1
+			} else {
+				break
+			}
+			voxelMap[x][y][1] = 1
+		}
 	}
 }
 
