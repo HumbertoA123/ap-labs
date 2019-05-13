@@ -5,46 +5,40 @@ import (
 	"math/rand"
 	"time"
 	"sync"
-	"github.com/olekukonko/tablewriter"
-	"os"
-	"strconv"
-	"strings"
 	)
 
 /*Constants*/
 const (
 	PrintColor = "\033[38;5;%dm%s\033[39;49m\n"
 	startingVal = 88
-	maxHeight = 500
-	n = 20
-	m = 20
-	numBalls = 25
-	yOffset = 4
+	maxHeight = 100
+	n = 13
+	numBalls = 10
+	yOffset = 2
 )
 
 /*Global Variables*/
 var voxelMap [][][]int
-//var wg sync.WaitGroup
-var data = [][]string{}
+var balls = [][]int{}
+var states = []string{}
+var tOffset int
 
 func main() {
+	print("\033[H\033[2J")
 	rand.Seed(time.Now().UnixNano())
+	finalOffset()
+	initBalls()
 	voxelMap = generateVoxelMap()
-
-	printBallInfo()
-
-	displayVoxelMap()
+	go updateEverything()
 	startRain()
-	displayVoxelMap()
-	fmt.Printf("\033[%d;%dH", m * 2, 0)
 }
 
 func generateVoxelMap() [][][]int {
 	newVoxelMap := [][][]int{}
 	for i := 0; i < n; i++ {
 		row := [][]int{}
-		for j := 0; j < m; j++ {
-			if i == 0 || i == n - 1 || j == 0 || j == m - 1 {
+		for j := 0; j < n; j++ {
+			if i == 0 || i == n - 1 || j == 0 || j == n - 1 {
 				s := []int{0, 0}
 				row = append(row, s)
 			} else {
@@ -60,7 +54,7 @@ func generateVoxelMap() [][][]int {
 func displayVoxelMap() {
 	for i := 0; i < len(voxelMap); i++ {
 		for j := 0; j < len(voxelMap); j++ {
-			fmt.Printf("\033[%d;%dH", i  + yOffset, (j * 3) + (m * 2))
+			fmt.Printf("\033[%d;%dH", i  + yOffset, (j * 3) + 50)
 			if voxelMap[i][j][1] == 0 {
 				fmt.Printf(PrintColor, startingVal + (5 - (voxelMap[i][j][0]) % 5), "*")
 			} else {
@@ -68,54 +62,34 @@ func displayVoxelMap() {
 			}
 		}
 	}
-}
-
-func updateVoxelMap(wg *sync.WaitGroup){
-	for i := 0; i < len(voxelMap); i++ {
-		for j := 0; j < len(voxelMap); j++ {
-			fmt.Printf("\033[%d;%dH", i  + yOffset, (j * 3) + (m * 2))
-			if voxelMap[i][j][1] == 0 {
-				fmt.Printf(PrintColor, startingVal + (5 - (voxelMap[i][j][0]) % 5), "*")
-			} else {
-				fmt.Printf(PrintColor, 3, "o")
-			}
-		}
-	}
-	wg.Done()
 }
 
 func startRain() {
 	var wg sync.WaitGroup
-	var wgrp sync.WaitGroup
 	for i := 0; i < numBalls; i++ {
 		wg.Add(1)
-		go rain(i, &wg, &wgrp)
+		go rain(i, &wg)
 	}
 	wg.Wait()
+	updateScreen()
 }
 
-func rain(index int, wg *sync.WaitGroup, wgrp *sync.WaitGroup) {
+func rain(index int, wg *sync.WaitGroup) {
 	x := 1 + rand.Intn(n - 2)
-	y := 1 + rand.Intn(m - 2)
+	y := 1 + rand.Intn(n - 2)
 	for voxelMap[x][y][1] == 1 {
 		x = 1 + rand.Intn(n - 2)
-		y = 1 + rand.Intn(m - 2)
+		y = 1 + rand.Intn(n - 2)
 	}
 	voxelMap[x][y][1] = 1
-
-	fmt.Printf("\033[%d;%dH", x + yOffset, (y * 3) + (m * 2))
-	fmt.Printf(PrintColor, 3, "o")
-
 	for true {
-		
-		/*Data for table*/
-
-		//updateTable(index, x ,y)
-		
-
-		/*\Data for table*/
+		balls[index][1] = x
+		balls[index][2] = y
 		time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
-		if y < (m - 1) && voxelMap[x][y + 1][0] < voxelMap[x][y][0] && voxelMap[x][y + 1][1] == 0 {
+		if x == 0 || y == 0 || x == (n - 1) || y == (n - 1) {
+			states[index] = seaBalls(index, x, y)
+			break
+		}else if y < (n - 1) && voxelMap[x][y + 1][0] < voxelMap[x][y][0] && voxelMap[x][y + 1][1] == 0 {
 			voxelMap[x][y][1] = 0
 			voxelMap[x][y+1][1] = 1
 			y += 1
@@ -132,64 +106,109 @@ func rain(index int, wg *sync.WaitGroup, wgrp *sync.WaitGroup) {
 			voxelMap[x-1][y][1] = 1
 			x -= 1
 		} else {
+			states[index] = "Lake"
 			break
 		}
-
-/*
-		wgrp.Add(1)
-		print("\033[H\033[2J")
-		go updateVoxelMap(&wgrp)
-		wgrp.Wait()
-*/
-		wgrp.Add(2)
-		print("\033[H\033[2J")
-		updateTable(index, x, y, wgrp)
-		updateVoxelMap(wgrp)
-		wgrp.Wait()
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
 	}
-	wgrp.Add(2)
-	print("\033[H\033[2J")
-	updateTable(index, x, y, wgrp)
-	updateVoxelMap(wgrp)
-	wgrp.Wait()
+	balls[index][1] = y
+	balls[index][2] = x
 	wg.Done()
 }
 
+func seaBalls(index int, x int, y int)string {
+	if x == 0 { return "North" }
+	if y == 0 { return "West" }
+	if x == (n - 1) { return "South" } else {return "East"}
+}
 
-func printBallInfo() {
+func initBalls() {
 	for i := 0; i < numBalls; i++ {
-		ball := strconv.Itoa(i)
-		data = append(data, []string{ball, "Hey", "400"})
+		ball := []int{i, 0, 0, rand.Intn(maxHeight) + (maxHeight * 2), 0, 0, 0}
+		balls = append(balls, ball)
+		states = append(states, "Move")
 	}
-
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Position", "Speed"})
-
-	for _, v := range data {
-	    table.Append(v)
-	}
-	table.Render() // Send output
-
 }
 
-func updateTable(index int, x int, y int, wg *sync.WaitGroup) {
+func displayBallInfo() {
+	fmt.Printf("\033[2;0H")
+	fmt.Printf("ID | Xp | Yp |  Zp  | Vx | Vy | Vz | State |")
+	fmt.Printf("\033[3;0H")
+	fmt.Printf("---+----+----+------+----+----+----+-------+")
+	for i := 0; i < len(balls); i++ {
+		/*Print Ball ID*/
+		fmt.Printf("\033[%d;0H", i+4)
+		fmt.Printf("%d", balls[i][0])
+		/*Separator*/
+		fmt.Printf("\033[%d;4H", i+4)
+		fmt.Printf("|")
+		/*Print Ball X Position*/
+		fmt.Printf("\033[%d;6H", i+4)
+		fmt.Printf("%d", balls[i][1])
+		/*Separator*/
+		fmt.Printf("\033[%d;9H", i+4)
+		fmt.Printf("|")
+		/*Print Ball Y Position*/
+		fmt.Printf("\033[%d;11H", i+4)
+		fmt.Printf("%d", balls[i][2])
+		/*Separator*/
+		fmt.Printf("\033[%d;14H", i+4)
+		fmt.Printf("|")
+		/*Print Ball Z Position*/
+		fmt.Printf("\033[%d;16H", i+4)
+		fmt.Printf("%d", balls[i][3])
+		/*Separator*/
+		fmt.Printf("\033[%d;21H", i+4)
+		fmt.Printf("|")
+		/*Print Ball X Velocity*/
+		fmt.Printf("\033[%d;23H", i+4)
+		fmt.Printf("%d", balls[i][4])
+		/*Separator*/
+		fmt.Printf("\033[%d;26H", i+4)
+		fmt.Printf("|")
+		/*Print Ball Y Velocity*/
+		fmt.Printf("\033[%d;28H", i+4)
+		fmt.Printf("%d", balls[i][5])
+		/*Separator*/
+		fmt.Printf("\033[%d;31H", i+4)
+		fmt.Printf("|")
+		/*Print Ball Y Velocity*/
+		fmt.Printf("\033[%d;33H", i+4)
+		fmt.Printf("%d", balls[i][6])
+		/*Separator*/
+		fmt.Printf("\033[%d;36H", i+4)
+		fmt.Printf("|")
 
-	var str strings.Builder
-	str.WriteString(strconv.Itoa(x))
-	str.WriteString(", ")
-	str.WriteString(strconv.Itoa(y))
-
-	data[index][1] = str.String()
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Position", "Speed"})
-	for _, v := range data {
-	    table.Append(v)
+		fmt.Printf("\033[%d;38H", i+4)
+		fmt.Printf(states[i])
+		/*Separator*/
+		fmt.Printf("\033[%d;44H", i+4)
+		fmt.Printf("|")
 	}
-	fmt.Printf("\033[0;0H")
-	table.Render()
-	wg.Done()
 }
+
+
+
+func updateScreen() {
+	print("\033[H\033[2J")
+  	displayVoxelMap()
+  	displayBallInfo()
+  	fmt.Printf("\033[%d;0H", tOffset * 2)
+}
+
+func updateEverything() {
+  for {
+    <-time.After(200 * time.Millisecond)
+    go updateScreen()
+  }
+}
+
+func finalOffset() {
+	if numBalls > n { tOffset = numBalls } else { tOffset = n }
+}
+
+
+
+
 
 
 
