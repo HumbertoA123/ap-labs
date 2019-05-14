@@ -5,30 +5,43 @@ import (
 	"math/rand"
 	"time"
 	"sync"
+	"math"
 	)
 
 /*Constants*/
 const (
 	PrintColor = "\033[38;5;%dm%s\033[39;49m\n"
 	startingVal = 88
-	maxHeight = 100
-	n = 13
-	numBalls = 10
 	yOffset = 2
+	acceleration = -9.8
 )
 
 /*Global Variables*/
 var voxelMap [][][]int
 var balls = [][]int{}
 var states = []string{}
+/*Balls Data*/
+var numBalls = 5
+var iterations = 10
+var maxHeight = 100
+var n = 15
+/*Ball Counter*/
+var north = 0
+var west = 0
+var south = 0
+var east = 0
+var island = 0
+/*Layout Helpers*/
 var tOffset int
 
 func main() {
 	print("\033[H\033[2J")
 	rand.Seed(time.Now().UnixNano())
-	finalOffset()
-	initBalls()
 	voxelMap = generateVoxelMap()
+	initBalls()
+	finalOffset()
+	displayVoxelMap()
+	time.Sleep(time.Second)
 	go updateEverything()
 	startRain()
 }
@@ -54,7 +67,7 @@ func generateVoxelMap() [][][]int {
 func displayVoxelMap() {
 	for i := 0; i < len(voxelMap); i++ {
 		for j := 0; j < len(voxelMap); j++ {
-			fmt.Printf("\033[%d;%dH", i  + yOffset, (j * 3) + 50)
+			fmt.Printf("\033[%d;%dH", i  + yOffset, (j * 3) + 70)
 			if voxelMap[i][j][1] == 0 {
 				fmt.Printf(PrintColor, startingVal + (5 - (voxelMap[i][j][0]) % 5), "*")
 			} else {
@@ -66,15 +79,66 @@ func displayVoxelMap() {
 
 func startRain() {
 	var wg sync.WaitGroup
-	for i := 0; i < numBalls; i++ {
-		wg.Add(1)
-		go rain(i, &wg)
+	k := 0
+	for i := 0; i < iterations; i++ {
+		for j := 0; j < numBalls; j++ {
+			wg.Add(1)
+			go rain(k, &wg)
+			k++
+		}
+		time.Sleep(time.Second * 3)
 	}
 	wg.Wait()
 	updateScreen()
 }
 
 func rain(index int, wg *sync.WaitGroup) {
+	x, y := ballsPosition(index)
+	fall(index, x, y)
+
+	for true {
+		balls[index][1] = y
+		balls[index][2] = x
+		balls[index][3] = voxelMap[x][y][0]
+		time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
+		if x == 0 || y == 0 || x == (n - 1) || y == (n - 1) {
+			states[index] = seaBalls(index, x, y)
+			voxelMap[x][y][1] = 0
+			break
+		}else if y < (n - 1) && voxelMap[x][y + 1][0] < voxelMap[x][y][0] && voxelMap[x][y + 1][1] == 0 {
+			voxelMap[x][y][1] = 0
+			voxelMap[x][y+1][1] = 1
+			calculateVelocity(index, voxelMap[x][y + 1][0], "s")
+			y += 1
+		} else if x < (n - 1) && voxelMap[x + 1][y][0] < voxelMap[x][y][0] && voxelMap[x + 1][y][1] == 0 {
+			voxelMap[x][y][1] = 0
+			voxelMap[x+1][y][1] = 1
+			calculateVelocity(index, voxelMap[x + 1][y][0], "e")
+			x += 1
+		} else if y > 0 && voxelMap[x][y - 1][0] < voxelMap[x][y][0] && voxelMap[x][y - 1][1] == 0 {
+			voxelMap[x][y][1] = 0
+			voxelMap[x][y-1][1] = 1
+			calculateVelocity(index, voxelMap[x][y - 1][0], "n")
+			y -= 1
+		} else if x > 0 && voxelMap[x - 1][y][0] < voxelMap[x][y][0] && voxelMap[x - 1][y][1] == 0 {
+			voxelMap[x][y][1] = 0
+			voxelMap[x-1][y][1] = 1
+			calculateVelocity(index, voxelMap[x - 1][y][0], "w")
+			x -= 1
+		} else {
+			states[index] = "Lake"
+			island += 1
+			break
+		}
+
+	}
+	balls[index][1] = y
+	balls[index][2] = x
+	calculateVelocity(index, voxelMap[x][y][0], "_")
+	wg.Done()
+}
+
+func ballsPosition(index int) (int, int) {
 	x := 1 + rand.Intn(n - 2)
 	y := 1 + rand.Intn(n - 2)
 	for voxelMap[x][y][1] == 1 {
@@ -82,58 +146,66 @@ func rain(index int, wg *sync.WaitGroup) {
 		y = 1 + rand.Intn(n - 2)
 	}
 	voxelMap[x][y][1] = 1
-	for true {
-		balls[index][1] = x
-		balls[index][2] = y
-		time.Sleep(time.Millisecond * time.Duration(rand.Intn(1000)))
-		if x == 0 || y == 0 || x == (n - 1) || y == (n - 1) {
-			states[index] = seaBalls(index, x, y)
-			break
-		}else if y < (n - 1) && voxelMap[x][y + 1][0] < voxelMap[x][y][0] && voxelMap[x][y + 1][1] == 0 {
-			voxelMap[x][y][1] = 0
-			voxelMap[x][y+1][1] = 1
-			y += 1
-		} else if x < (n - 1) && voxelMap[x + 1][y][0] < voxelMap[x][y][0] && voxelMap[x + 1][y][1] == 0 {
-			voxelMap[x][y][1] = 0
-			voxelMap[x+1][y][1] = 1
-			x += 1
-		} else if y > 0 && voxelMap[x][y - 1][0] < voxelMap[x][y][0] && voxelMap[x][y - 1][1] == 0 {
-			voxelMap[x][y][1] = 0
-			voxelMap[x][y-1][1] = 1
-			y -= 1
-		} else if x > 0 && voxelMap[x - 1][y][0] < voxelMap[x][y][0] && voxelMap[x - 1][y][1] == 0 {
-			voxelMap[x][y][1] = 0
-			voxelMap[x-1][y][1] = 1
-			x -= 1
-		} else {
-			states[index] = "Lake"
-			break
-		}
+	balls[index][1] = x
+	balls[index][2] = y
+	return x, y
+}
+
+func fall(index int, x int, y int) {
+	t := 500
+	totalTime := 0
+	for balls[index][3] >= voxelMap[x][y][0] {
+		balls[index][3] = int(balls[index][6] * (totalTime / 1000)) + balls[index][3]
+		balls[index][6] = balls[index][6] + int(acceleration * float64(totalTime / 1000))
+		totalTime += t
+		time.Sleep(time.Millisecond * time.Duration(t))
 	}
-	balls[index][1] = y
-	balls[index][2] = x
-	wg.Done()
+	balls[index][3] = voxelMap[x][y][0]
+	states[index] = "Moving"
 }
 
 func seaBalls(index int, x int, y int)string {
-	if x == 0 { return "North" }
-	if y == 0 { return "West" }
-	if x == (n - 1) { return "South" } else {return "East"}
+	if x == 0 { north += 1; return "North" }
+	if y == 0 { west += 1; return "West" }
+	if x == (n - 1) { south += 1; return "South" }
+	if y == (n - 1) {east += 1; return "East"}
+	return ""
+}
+
+func calculateVelocity(index int, zPos int, direction string) {
+	angle := math.Atan((float64(balls[index][3]) / float64(zPos)))
+	if direction == "n" {
+		balls[index][5] = int(float64(balls[index][6]) * math.Cos(angle))
+		balls[index][6] = int(float64(balls[index][6]) * math.Sin(angle))
+	} else if direction == "w" {
+		balls[index][4] = int(float64(balls[index][6]) * math.Cos(angle))
+		balls[index][6] = int(float64(balls[index][6]) * math.Sin(angle))
+	} else if direction == "s" {
+		balls[index][4] = -int(float64(balls[index][6]) * math.Cos(angle))
+		balls[index][6] = int(float64(balls[index][6]) * math.Sin(angle))
+	} else if direction == "e" {
+		balls[index][5] = -int(float64(balls[index][6]) * math.Cos(angle))
+		balls[index][6] = int(float64(balls[index][6]) * math.Sin(angle))
+	} else {
+		balls[index][4] = 0
+		balls[index][5] = 0
+		balls[index][6] = 0
+	}
 }
 
 func initBalls() {
-	for i := 0; i < numBalls; i++ {
-		ball := []int{i, 0, 0, rand.Intn(maxHeight) + (maxHeight * 2), 0, 0, 0}
+	for i := 0; i < (numBalls * iterations); i++ {
+		ball := []int{i, 0, 0, rand.Intn(maxHeight * 20) + maxHeight, 0, 0, 0}
 		balls = append(balls, ball)
-		states = append(states, "Move")
+		states = append(states, "Falling")
 	}
 }
 
 func displayBallInfo() {
 	fmt.Printf("\033[2;0H")
-	fmt.Printf("ID | Xp | Yp |  Zp  | Vx | Vy | Vz | State |")
+	fmt.Printf("ID | Xp | Yp |  Zp  | Vx | Vy |  Vz  |  State  |")
 	fmt.Printf("\033[3;0H")
-	fmt.Printf("---+----+----+------+----+----+----+-------+")
+	fmt.Printf("---+----+----+------+----+----+------+---------+")
 	for i := 0; i < len(balls); i++ {
 		/*Print Ball ID*/
 		fmt.Printf("\033[%d;0H", i+4)
@@ -171,19 +243,43 @@ func displayBallInfo() {
 		/*Separator*/
 		fmt.Printf("\033[%d;31H", i+4)
 		fmt.Printf("|")
-		/*Print Ball Y Velocity*/
+		/*Print Ball Z Velocity*/
 		fmt.Printf("\033[%d;33H", i+4)
 		fmt.Printf("%d", balls[i][6])
 		/*Separator*/
-		fmt.Printf("\033[%d;36H", i+4)
-		fmt.Printf("|")
-
 		fmt.Printf("\033[%d;38H", i+4)
+		fmt.Printf("|")
+		/*Print Ball State*/
+		fmt.Printf("\033[%d;40H", i+4)
 		fmt.Printf(states[i])
 		/*Separator*/
-		fmt.Printf("\033[%d;44H", i+4)
+		fmt.Printf("\033[%d;48H", i+4)
 		fmt.Printf("|")
 	}
+	fmt.Printf("\033[%d;50H", 2)
+	fmt.Printf("Island:")
+	fmt.Printf("\033[%d;58H", 2)
+	fmt.Printf("%d", island)
+
+	fmt.Printf("\033[%d;50H", 3)
+	fmt.Printf("North:")
+	fmt.Printf("\033[%d;58H", 3)
+	fmt.Printf("%d", north)
+
+	fmt.Printf("\033[%d;50H", 4)
+	fmt.Printf("West:")
+	fmt.Printf("\033[%d;58H", 4)
+	fmt.Printf("%d", west)
+
+	fmt.Printf("\033[%d;50H", 5)
+	fmt.Printf("South:")
+	fmt.Printf("\033[%d;58H", 5)
+	fmt.Printf("%d", south)
+
+	fmt.Printf("\033[%d;50H", 6)
+	fmt.Printf("East:")
+	fmt.Printf("\033[%d;58H", 6)
+	fmt.Printf("%d", east)
 }
 
 
@@ -192,7 +288,7 @@ func updateScreen() {
 	print("\033[H\033[2J")
   	displayVoxelMap()
   	displayBallInfo()
-  	fmt.Printf("\033[%d;0H", tOffset * 2)
+  	fmt.Printf("\033[%d;0H", tOffset + 5)
 }
 
 func updateEverything() {
@@ -203,7 +299,7 @@ func updateEverything() {
 }
 
 func finalOffset() {
-	if numBalls > n { tOffset = numBalls } else { tOffset = n }
+	if (numBalls * iterations) > n { tOffset = (numBalls * iterations) } else { tOffset = n }
 }
 
 
