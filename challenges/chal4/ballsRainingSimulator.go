@@ -36,6 +36,8 @@ var tOffset int
 
 func main() {
 	print("\033[H\033[2J")
+	enterInputs()
+	print("\033[H\033[2J")
 	rand.Seed(time.Now().UnixNano())
 	voxelMap = generateVoxelMap()
 	initBalls()
@@ -44,6 +46,33 @@ func main() {
 	time.Sleep(time.Second)
 	go updateEverything()
 	startRain()
+}
+
+func enterInputs() {
+	/*Maps Size*/
+    fmt.Println("Size of map (nxn):")
+    _, err := fmt.Scan(&n)
+    if err != nil {
+    	n = 5
+    }
+    /*Max Height*/
+    fmt.Println("Max height::")
+    _, err = fmt.Scan(&maxHeight)
+    if err != nil {
+    	maxHeight = 1
+    }
+    /*Iterations*/
+    fmt.Println("Iterations:")
+    _, err = fmt.Scan(&iterations)
+    if err != nil {
+    	iterations = 1
+    }
+    /*Number of Balls per Iteration*/
+    fmt.Println("Balls per iteration::")
+    _, err = fmt.Scan(&numBalls)
+    if err != nil {
+    	numBalls = 1
+    }
 }
 
 func generateVoxelMap() [][][]int {
@@ -152,6 +181,7 @@ func ballsPosition(index int) (int, int) {
 }
 
 func fall(index int, x int, y int) {
+	states[index] = "Falling"
 	t := 500
 	totalTime := 0
 	for balls[index][3] >= voxelMap[x][y][0] {
@@ -197,7 +227,7 @@ func initBalls() {
 	for i := 0; i < (numBalls * iterations); i++ {
 		ball := []int{i, 0, 0, rand.Intn(maxHeight * 20) + maxHeight, 0, 0, 0}
 		balls = append(balls, ball)
-		states = append(states, "Falling")
+		states = append(states, "Waiting")
 	}
 }
 
