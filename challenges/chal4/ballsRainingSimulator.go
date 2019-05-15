@@ -59,7 +59,7 @@ func enterInputs() {
     fmt.Println("Max height::")
     _, err = fmt.Scan(&maxHeight)
     if err != nil {
-    	maxHeight = 1
+    	maxHeight = 10
     }
     /*Iterations*/
     fmt.Println("Iterations:")
@@ -107,6 +107,13 @@ func displayVoxelMap() {
 }
 
 func startRain() {
+	/*
+	This function creates the goroutines for each ball.
+	There is a sleep of 3 seconds between every iteration.
+	Every iteration creates numBalls goroutines.
+	sync.WaitGroup is used to make sure every goroutine finishes
+	before ending the program.
+	*/
 	var wg sync.WaitGroup
 	k := 0
 	for i := 0; i < iterations; i++ {
@@ -122,6 +129,12 @@ func startRain() {
 }
 
 func rain(index int, wg *sync.WaitGroup) {
+	/*
+	This function handles the behavior of every ball.
+	When this function is done it calls sync.WaitGroup.Done(),
+	which is the same sync.WaitGroup used in startRain(), to decrease the counter
+	on the sync.WaitGroup.
+	*/
 	x, y := ballsPosition(index)
 	fall(index, x, y)
 
@@ -168,6 +181,11 @@ func rain(index int, wg *sync.WaitGroup) {
 }
 
 func ballsPosition(index int) (int, int) {
+	/*
+	Gives an (X, Y) position to the ball in the map, if that
+	location is occupied by another ball, then it generates new
+	coordinates until it finds an empty location.
+	*/
 	x := 1 + rand.Intn(n - 2)
 	y := 1 + rand.Intn(n - 2)
 	for voxelMap[x][y][1] == 1 {
@@ -181,6 +199,9 @@ func ballsPosition(index int) (int, int) {
 }
 
 func fall(index int, x int, y int) {
+	/*
+	Controlls the falling velocity and Z position of each ball.
+	*/
 	states[index] = "Falling"
 	t := 500
 	totalTime := 0
@@ -195,6 +216,10 @@ func fall(index int, x int, y int) {
 }
 
 func seaBalls(index int, x int, y int)string {
+	/*
+	Tracks the number of balls that go to the sea
+	from the north, west, south, east.
+	*/
 	if x == 0 { north += 1; return "North" }
 	if y == 0 { west += 1; return "West" }
 	if x == (n - 1) { south += 1; return "South" }
@@ -203,6 +228,9 @@ func seaBalls(index int, x int, y int)string {
 }
 
 func calculateVelocity(index int, zPos int, direction string) {
+	/*
+	Calculates x and y velocities for every ball.
+	*/
 	angle := math.Atan((float64(balls[index][3]) / float64(zPos)))
 	if direction == "n" {
 		balls[index][5] = int(float64(balls[index][6]) * math.Cos(angle))
